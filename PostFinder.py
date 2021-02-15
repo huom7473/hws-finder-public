@@ -10,12 +10,12 @@ def log_timestamp():
     return datetime.now().strftime("%Y.%m.%d:%H:%M:%S")
     
 class PostFinder:
-    def __init__(self, config_file="config.json", pickle_file=".processed.pickle"):
-        with open(config_file) as f:
-            self.config = json.load(f)
+    def __init__(self, config_file="config.json", pickle_file=".processed.pickle", subreddit="hardwareswap"):
+        self.load_config(config_file)
         
         self.logfile = open(self.config["log_file"], 'a') if self.config["log_file"] else None
-            
+        self.subreddit = subreddit
+        
         self.pickle_file = pickle_file
         try:
             with open(pickle_file, 'rb') as f:
@@ -41,6 +41,10 @@ class PostFinder:
         with open(self.pickle_file, 'wb') as f:
             pickle.dump(self.processed, f)
 
+    def load_config(self, config_file="config.json"):
+        with open(config_file) as f:
+            self.config = json.load(f)
+
     def log(self, string):
         if self.logfile:
             self.logfile.write(f"{log_timestamp()}: {string}\n")
@@ -61,7 +65,7 @@ class PostFinder:
     def get_posts(self):
         matched_posts = []
         unmatched_posts = []
-        subreddit = self.reddit.subreddit("hardwareswap")
+        subreddit = self.reddit.subreddit(self.subreddit)
 
         error_message_printed = False
         while True:

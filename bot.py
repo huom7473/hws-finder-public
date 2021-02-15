@@ -1,4 +1,5 @@
 import discord, asyncio, json, math
+import sys
 from discord.ext import commands
 from PostFinder import PostFinder
 
@@ -8,6 +9,7 @@ boton = False
 config = None
 activechannel = None
 checkdelay = 5 #Number of seconds between sending an update
+config_updated = False
 
 #functions
 def channelSet() -> bool:
@@ -17,13 +19,23 @@ def channelSet() -> bool:
         return True
 
 def updateConfig():
+    global config_updated
     with open("config.json", 'w') as f:
         json.dump(config, f, indent=4)
+    config_updated = True
 
 async def sendPrices():
-    with PostFinder() as pf:
+    global config_updated
+    subreddit = "test" if len(sys.argv) > 1 and sys.argv[1] == "--test" else "hardwareswap"
+    print(f"monitoring r/{subreddit}.")
+    
+    with PostFinder(subreddit=subreddit) as pf:
         while True:
             if channelSet() and boton:
+                if config_updated:
+                    pf.load_config("config.json")
+                    config_updated = False
+                    
                 newposts = pf.get_posts()
                 if newposts:
                     matched, unmatched = newposts
@@ -177,5 +189,6 @@ async def shutdown(ctx):
     exit()
     
 #run
-client.loop.create_task(sendPrices())
-client.run("MjM1NTU2MDU2MzU5NTAxODI0.V_2ArA.vCt9X5a397y9fRiEpZnTUNypXSA")
+if __name__ == "__main__":
+    client.loop.create_task(sendPrices())
+    client.run("BOT_TOKEN_HERE")
